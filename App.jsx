@@ -121,4 +121,104 @@ export default function BasketballPlanner() {
           <div style={s.card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                <button onClick={() => { const d = new Date(currentMonth); d.setMonth(d.getMonth() - 1); setCurrentMonth(startOfMonth(d)); }} style={{border:'none', background:'none', fontSize:'1.2rem'}}>‹</button>
-               <b style={{fontSize: '0.9
+               <b style={{fontSize: '0.9rem'}}>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</b>
+               <button onClick={() => { const d = new Date(currentMonth); d.setMonth(d.getMonth() + 1); setCurrentMonth(startOfMonth(d)); }} style={{border:'none', background:'none', fontSize:'1.2rem'}}>›</button>
+            </div>
+            <div style={s.grid}>
+              {['S','M','T','W','T','F','S'].map(d => <div key={d} style={{textAlign:'center', fontSize:'0.6rem', fontWeight:'900', color:'#cbd5e1'}}>{d}</div>)}
+              {buildMonthGrid(currentMonth).map((date, i) => {
+                const key = date.toDateString();
+                const isSel = key === selectedDate.toDateString();
+                const isToday = key === today.toDateString();
+                const hasPlans = events[key] && events[key].length > 0;
+                return (
+                  <div key={i} onClick={() => setSelectedDate(date)} style={{
+                    height: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', fontSize: '0.85rem', cursor: 'pointer',
+                    backgroundColor: isSel ? '#ea580c' : 'transparent', color: isSel ? 'white' : (date.getMonth() !== currentMonth.getMonth() ? '#cbd5e1' : '#1e293b'),
+                    border: isToday && !isSel ? '1.5px solid #ea580c' : 'none', position: 'relative'
+                  }}>
+                    {date.getDate()}
+                    {hasPlans && <div style={{ width: '3px', height: '3px', backgroundColor: isSel ? 'white' : '#ea580c', borderRadius: '50%', position: 'absolute', bottom: '4px' }}></div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={s.card}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '0.9rem' }}>{selectedDate.getDate()} {selectedDate.toLocaleString('default', { month: 'short' })}</h3>
+              <button onClick={addPlan} style={{ backgroundColor: '#ea580c', color: 'white', border: 'none', borderRadius: '50%', width: '28px', height: '28px', fontSize: '1.2rem', fontWeight: 'bold' }}>+</button>
+            </div>
+            {(events[selectedDate.toDateString()] || []).map((p, i) => (
+              <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid #f8fafc', display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                <span>🏀 {p}</span>
+                <button onClick={() => deletePlan(selectedDate.toDateString(), i)} style={{ border: 'none', background: 'none', color: '#cbd5e1' }}>✕</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {page === "shooting" && (
+        <div>
+          <div style={{ ...s.card, textAlign: 'center' }}>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color:'#94a3b8' }}>LAST SESSION</h3>
+            <div style={{ height: '160px', position: 'relative' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={pieData} innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value" startAngle={90} endAngle={450}>
+                    <Cell fill="#ea580c" cornerRadius={10} />
+                    <Cell fill="#f1f5f9" />
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: '900', color: '#ea580c' }}>{latestSession.percent}%</div>
+                <div style={{ fontSize: '0.6rem', fontWeight: 'bold', color: '#94a3b8' }}>ACCURACY</div>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '10px', background: '#f8fafc', padding: '8px', borderRadius: '15px' }}>
+              <input style={s.input} placeholder="Made" type="number" value={shotsMade} onChange={e => setShotsMade(e.target.value)} />
+              <span style={{fontWeight:'bold', color:'#cbd5e1'}}>/</span>
+              <input style={s.input} placeholder="Total" type="number" value={shotsTaken} onChange={e => setShotsTaken(e.target.value)} />
+              <button onClick={addShot} style={{ backgroundColor: '#ea580c', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '10px', fontWeight: 'bold', fontSize: '0.8rem' }}>SAVE</button>
+            </div>
+          </div>
+
+          <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+            {shotSessions.map((s_item) => (
+              <div key={s_item.id} style={{ ...s.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 15px' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>{s_item.made}/{s_item.taken} <span style={{color:'#ea580c', marginLeft:'10px'}}>{s_item.percent}%</span></div>
+                <button onClick={() => deleteShot(s_item.id)} style={{ border: 'none', background: 'none', color: '#fee2e2', fontWeight: 'bold' }}>✕</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {page === "notes" && (
+        <div>
+          <textarea
+            style={{ width: '100%', height: '55vh', borderRadius: '20px', padding: '15px', border: '1px solid #e2e8f0', boxSizing: 'border-box', fontSize: '0.95rem', outline: 'none' }}
+            placeholder="Write your game notes here..."
+            value={tempNotes}
+            onChange={e => setTempNotes(e.target.value)}
+          />
+          <button style={s.saveBtn} onClick={saveNotesManually}>
+            {isSaved ? "✅ SAVED!" : "💾 SAVE NOTES"}
+          </button>
+          <p style={{ textAlign: 'center', fontSize: '0.7rem', color: '#94a3b8', marginTop: '10px' }}>
+            Notes are only saved when you press the button above.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Render
+import { createRoot } from 'react-dom/client';
+const root = createRoot(document.getElementById('root'));
+root.render(<BasketballPlanner />);
