@@ -54,7 +54,7 @@ export default function BallerPro() {
   const [planTitle, setPlanTitle] = useState("");
 
   useEffect(() => {
-    const saved = localStorage.getItem("baller_no_auth_v1");
+    const saved = localStorage.getItem("baller_final_v10");
     if (saved) {
       const d = JSON.parse(saved);
       setShotSessions(d.shots || []);
@@ -66,7 +66,7 @@ export default function BallerPro() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("baller_no_auth_v1", JSON.stringify({ shots: shotSessions, notes, events, seasons }));
+    localStorage.setItem("baller_final_v10", JSON.stringify({ shots: shotSessions, notes, events, seasons }));
   }, [shotSessions, notes, events, seasons]);
 
   const addSeason = () => {
@@ -122,6 +122,59 @@ export default function BallerPro() {
         <button style={s.navBtn(page === 'notes')} onClick={() => setPage('notes')}>📝</button>
       </div>
 
+      {page === 'calendar' && (
+        <div style={{animation: 'fadeIn 0.2s'}}>
+          <div style={s.card}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+              <button onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth()-1)))} style={{background:'none', border:'none', color:'white', fontSize:'1.2rem'}}>‹</button>
+              <b>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</b>
+              <button onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth()+1)))} style={{background:'none', border:'none', color:'white', fontSize:'1.2rem'}}>›</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+              {buildMonthGrid(currentMonth).map((d, i) => {
+                const dateKey = d.toDateString();
+                const isSelected = dateKey === selectedDate.toDateString();
+                const isToday = dateKey === todayDate.toDateString();
+                const hasPlans = events[dateKey] && events[dateKey].length > 0;
+                return (
+                  <div key={i} onClick={() => setSelectedDate(d)} style={{ 
+                    height: '42px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', fontSize: '0.8rem', 
+                    backgroundColor: isSelected ? '#ea580c' : 'transparent', 
+                    border: isToday && !isSelected ? '2px solid #ea580c' : 'none',
+                    color: d.getMonth() !== currentMonth.getMonth() ? '#475569' : 'white',
+                    position: 'relative'
+                  }}>
+                    {d.getDate()}
+                    {hasPlans && <div style={{ width: '4px', height: '4px', backgroundColor: isSelected ? 'white' : '#ea580c', borderRadius: '50%', position: 'absolute', bottom: '4px' }}></div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div style={s.card}>
+            <h4 style={{margin:'0 0 10px 0', fontSize:'0.8rem', color:'#ea580c'}}>ADD PLAN FOR {selectedDate.getDate()} {selectedDate.toLocaleString('default', { month: 'short' })}</h4>
+            <div style={{display:'flex', gap:'8px'}}>
+              <input style={{flex:1, padding:'10px', borderRadius:'10px', backgroundColor:'#334155', border:'none', color:'white', outline:'none'}} placeholder="e.g. 500 Makes" value={planTitle} onChange={e=>setPlanTitle(e.target.value)} />
+              <button onClick={() => { if(planTitle){ setEvents({...events, [selectedDate.toDateString()]: [...(events[selectedDate.toDateString()]||[]), {title:planTitle}]}); setPlanTitle(""); } }} style={{padding:'10px 20px', backgroundColor:'#ea580c', border:'none', color:'white', borderRadius:10, fontWeight:'bold'}}>ADD</button>
+            </div>
+          </div>
+
+          {/* PLAN INDICATOR LIST */}
+          <div style={{maxHeight:'200px', overflowY:'auto'}}>
+            <h4 style={{margin:'5px 0 10px 10px', fontSize:'0.7rem', color:'#94a3b8', textTransform:'uppercase'}}>Agenda</h4>
+            {(events[selectedDate.toDateString()] || []).length === 0 ? <p style={{fontSize:'0.8rem', color:'#475569', marginLeft:'10px'}}>No plans for this date.</p> :
+              events[selectedDate.toDateString()].map((p, i) => (
+                <div key={i} style={{...s.card, display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 18px'}}>
+                   <span style={{fontSize:'0.9rem'}}>🏀 {p.title}</span>
+                   <button onClick={() => { const updated = events[selectedDate.toDateString()].filter((_,idx) => idx !== i); setEvents({...events, [selectedDate.toDateString()]: updated}); }} style={{background:'none', border:'none', color:'#475569'}}>✕</button>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      )}
+
+      {/* OTHER PAGES REMAIN THE SAME FOR STABILITY */}
       {page === 'stats' && (
         <div style={{animation: 'fadeIn 0.2s'}}>
           <div style={s.card}>
@@ -138,7 +191,6 @@ export default function BallerPro() {
               <div style={{textAlign:'center'}}><div style={{fontSize:'1.1rem', fontWeight:'bold', color:'#ea580c'}}>{latest.box.tov}</div><div style={{fontSize:'0.55rem', color:'#94a3b8'}}>TOV</div></div>
             </div>
           </div>
-
           <div style={s.card}>
             <h4 style={{marginTop:0, fontSize:'0.8rem', color:'#ea580c', textAlign:'center'}}>LOG SESSION</h4>
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '15px', marginTop:'10px' }}>
@@ -169,36 +221,6 @@ export default function BallerPro() {
               <div><div style={{fontSize:'0.6rem', color:'#94a3b8'}}>AST</div><div>{careerTotals.ast}</div></div>
               <div><div style={{fontSize:'0.6rem', color:'#94a3b8'}}>TOV</div><div>{careerTotals.tov}</div></div>
            </div>
-        </div>
-      )}
-
-      {page === 'calendar' && (
-        <div>
-          <div style={s.card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-              <button onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth()-1)))} style={{background:'none', border:'none', color:'white', fontSize:'1.2rem'}}>‹</button>
-              <b>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</b>
-              <button onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth()+1)))} style={{background:'none', border:'none', color:'white', fontSize:'1.2rem'}}>›</button>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
-              {buildMonthGrid(currentMonth).map((d, i) => {
-                const isSelected = d.toDateString() === selectedDate.toDateString();
-                const isToday = d.toDateString() === todayDate.toDateString();
-                return (
-                  <div key={i} onClick={() => setSelectedDate(d)} style={{ 
-                    height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', fontSize: '0.8rem', 
-                    backgroundColor: isSelected ? '#ea580c' : 'transparent', 
-                    border: isToday && !isSelected ? '2px solid #ea580c' : 'none',
-                    color: d.getMonth() !== currentMonth.getMonth() ? '#475569' : 'white'
-                  }}>{d.getDate()}</div>
-                );
-              })}
-            </div>
-          </div>
-          <div style={s.card}>
-            <input style={{width:'100%', padding:'12px', borderRadius:'10px', backgroundColor:'#334155', border:'none', color:'white', boxSizing:'border-box', outline:'none'}} placeholder="Plan today..." value={planTitle} onChange={e=>setPlanTitle(e.target.value)} />
-            <button onClick={() => { if(planTitle){ setEvents({...events, [selectedDate.toDateString()]: [...(events[selectedDate.toDateString()]||[]), {title:planTitle}]}); setPlanTitle(""); } }} style={{width:'100%', marginTop:10, padding:12, backgroundColor:'#ea580c', border:'none', color:'white', borderRadius:10, fontWeight:'bold'}}>ADD</button>
-          </div>
         </div>
       )}
 
