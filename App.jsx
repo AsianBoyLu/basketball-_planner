@@ -19,23 +19,32 @@ function buildMonthGrid(date) {
   return days;
 }
 
-// Custom Component for the Small Rings
-const StatRing = ({ percent, label, color = "#ea580c" }) => (
-  <div style={{ textAlign: 'center', flex: 1 }}>
-    <div style={{ height: '70px', position: 'relative' }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie data={[{ value: percent }, { value: 100 - percent }]} innerRadius={22} outerRadius={30} paddingAngle={2} dataKey="value" startAngle={90} endAngle={450}>
-            <Cell fill={color} cornerRadius={4} />
-            <Cell fill="#f1f5f9" />
-          </Pie>
-        </PieChart>
-      </ResponsiveContainer>
-      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '0.7rem', fontWeight: '900' }}>{percent}%</div>
+// Logic to determine color based on percentage
+const getStatColor = (percent) => {
+  if (percent < 60) return "#ef4444"; // Red
+  if (percent < 70) return "#facc15"; // Yellow
+  return "#22c55e"; // Green
+};
+
+const StatRing = ({ percent, label }) => {
+  const color = getStatColor(percent);
+  return (
+    <div style={{ textAlign: 'center', flex: 1 }}>
+      <div style={{ height: '70px', position: 'relative' }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={[{ value: percent }, { value: 100 - percent }]} innerRadius={22} outerRadius={30} paddingAngle={2} dataKey="value" startAngle={90} endAngle={450}>
+              <Cell fill={color} cornerRadius={4} />
+              <Cell fill="#f1f5f9" />
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '0.7rem', fontWeight: '900' }}>{percent}%</div>
+      </div>
+      <div style={{ fontSize: '0.6rem', fontWeight: 'bold', color: '#94a3b8', marginTop: '2px' }}>{label}</div>
     </div>
-    <div style={{ fontSize: '0.6rem', fontWeight: 'bold', color: '#94a3b8', marginTop: '2px' }}>{label}</div>
-  </div>
-);
+  );
+};
 
 export default function BasketballPlanner() {
   const today = new Date();
@@ -47,17 +56,15 @@ export default function BasketballPlanner() {
   const [selectedDate, setSelectedDate] = useState(today);
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(today));
 
-  // Shooting States
   const [shotSessions, setShotSessions] = useState([]);
   const [m3, setM3] = useState(""); const [a3, setA3] = useState("");
   const [mMid, setMMid] = useState(""); const [aMid, setAMid] = useState("");
   const [mLay, setMLay] = useState(""); const [aLay, setALay] = useState("");
   const [mFt, setMFt] = useState(""); const [aFt, setAFt] = useState("");
-
   const [planTitle, setPlanTitle] = useState("");
 
   useEffect(() => {
-    const saved = localStorage.getItem("ballerMasterDataV7");
+    const saved = localStorage.getItem("ballerMasterDataV8");
     if (saved) {
       const data = JSON.parse(saved);
       setShotSessions(data.shots || []);
@@ -68,28 +75,28 @@ export default function BasketballPlanner() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("ballerMasterDataV7", JSON.stringify({ shots: shotSessions, notes, events }));
+    localStorage.setItem("ballerMasterDataV8", JSON.stringify({ shots: shotSessions, notes, events }));
   }, [shotSessions, notes, events]);
 
   const addShotSession = () => {
-    const made3 = parseInt(m3) || 0; const att3 = parseInt(a3) || 0;
-    const madeMid = parseInt(mMid) || 0; const attMid = parseInt(aMid) || 0;
-    const madeLay = parseInt(mLay) || 0; const attLay = parseInt(aLay) || 0;
-    const madeFt = parseInt(mFt) || 0; const attFt = parseInt(aFt) || 0;
+    const m3n = parseInt(m3) || 0; const a3n = parseInt(a3) || 0;
+    const mMn = parseInt(mMid) || 0; const aMn = parseInt(aMid) || 0;
+    const mLn = parseInt(mLay) || 0; const aLn = parseInt(aLay) || 0;
+    const mFn = parseInt(mFt) || 0; const aFn = parseInt(aFt) || 0;
 
-    const totalMadeFG = made3 + madeMid + madeLay;
-    const totalAttFG = att3 + attMid + attLay;
+    const totM = m3n + mMn + mLn;
+    const totA = a3n + aMn + aLn;
     
-    if (totalAttFG === 0 && attFt === 0) return alert("Enter shots!");
+    if (totA === 0 && aFn === 0) return alert("Enter shots!");
 
     const session = {
       id: Date.now(),
       date: new Date().toLocaleDateString(),
-      fgPercent: totalAttFG > 0 ? Math.round((totalMadeFG / totalAttFG) * 100) : 0,
-      ftPercent: attFt > 0 ? Math.round((madeFt / attFt) * 100) : 0,
-      p3: att3 > 0 ? Math.round((made3/att3)*100) : 0,
-      pMid: attMid > 0 ? Math.round((madeMid/attMid)*100) : 0,
-      pLay: attLay > 0 ? Math.round((madeLay/attLay)*100) : 0,
+      fgPercent: totA > 0 ? Math.round((totM / totA) * 100) : 0,
+      ftPercent: aFn > 0 ? Math.round((mFn / aFn) * 100) : 0,
+      p3: a3n > 0 ? Math.round((m3n/a3n)*100) : 0,
+      pMid: aMn > 0 ? Math.round((mMn/aMn)*100) : 0,
+      pLay: aLn > 0 ? Math.round((mLn/aLn)*100) : 0,
     };
 
     setShotSessions([session, ...shotSessions]);
@@ -97,6 +104,7 @@ export default function BasketballPlanner() {
   };
 
   const latest = shotSessions[0] || { fgPercent: 0, ftPercent: 0, p3: 0, pMid: 0, pLay: 0 };
+  const masterColor = getStatColor(latest.fgPercent);
 
   const s = {
     container: { maxWidth: '450px', margin: '0 auto', padding: '15px', fontFamily: '-apple-system, sans-serif', backgroundColor: '#fdfdfd', minHeight: '100vh' },
@@ -124,18 +132,18 @@ export default function BasketballPlanner() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={[{value:latest.fgPercent},{value:100-latest.fgPercent}]} innerRadius={40} outerRadius={55} paddingAngle={5} dataKey="value" startAngle={90} endAngle={450}>
-                    <Cell fill="#ea580c" cornerRadius={10} /><Cell fill="#f1f5f9" />
+                    <Cell fill={masterColor} cornerRadius={10} /><Cell fill="#f1f5f9" />
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '1.4rem', fontWeight: '900', color: '#ea580c' }}>{latest.fgPercent}%</div>
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '1.4rem', fontWeight: '900', color: masterColor }}>{latest.fgPercent}%</div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '10px' }}>
               <StatRing label="3PTS" percent={latest.p3} />
               <StatRing label="MID" percent={latest.pMid} />
               <StatRing label="LAYUP" percent={latest.pLay} />
-              <StatRing label="FT" percent={latest.ftPercent} color="#64748b" />
+              <StatRing label="FT" percent={latest.ftPercent} />
             </div>
 
             <div style={{ marginTop: '20px', background: '#f8fafc', padding: '12px', borderRadius: '15px' }}>
@@ -151,7 +159,6 @@ export default function BasketballPlanner() {
         </div>
       )}
 
-      {/* Keep Calendar and Notes logic the same as the previous version */}
       {page === "calendar" && (
         <div>
           <div style={s.card}>
