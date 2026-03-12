@@ -112,4 +112,97 @@ export default function BasketballPlanner() {
 
             <div style={s.grid}>
               {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} style={{ textAlign: 'center', fontSize: '0.7rem', fontWeight: 'bold', color: '#cbd5e1' }}>{d}</div>)}
-              {buildMonthGrid(currentMonth).
+              {buildMonthGrid(currentMonth).map((date, i) => {
+                const key = date.toDateString();
+                const isSel = key === selectedDate.toDateString();
+                const isToday = key === new Date().toDateString();
+                const hasPlans = events[key] && events[key].length > 0;
+                return (
+                  <div key={i} onClick={() => setSelectedDate(date)} style={{
+                    height: '45px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', fontSize: '0.9rem', cursor: 'pointer',
+                    backgroundColor: isSel ? '#ea580c' : 'transparent', color: isSel ? 'white' : (date.getMonth() !== currentMonth.getMonth() ? '#cbd5e1' : '#1e293b'),
+                    border: isToday && !isSel ? '2px solid #ea580c' : 'none', fontWeight: isToday || isSel ? 'bold' : 'normal'
+                  }}>
+                    {date.getDate()}
+                    {hasPlans && <div style={{ width: '4px', height: '4px', backgroundColor: isSel ? 'white' : '#ea580c', borderRadius: '50%', marginTop: '2px' }}></div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={s.card}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem' }}>{selectedDate.getDate()} {selectedDate.toLocaleString('default', { month: 'short' })}</h3>
+              <button onClick={addPlan} style={{ backgroundColor: '#ea580c', color: 'white', border: 'none', borderRadius: '50%', width: '32px', height: '32px', fontSize: '1.2rem', fontWeight: 'bold' }}>+</button>
+            </div>
+            {(events[selectedDate.toDateString()] || []).length === 0 ? <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Rest day or no plans logged.</p> :
+              events[selectedDate.toDateString()].map((p, i) => (
+                <div key={i} style={{ padding: '12px 0', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.95rem' }}>
+                  <span>🏀 {p}</span>
+                  <button onClick={() => deletePlan(selectedDate.toDateString(), i)} style={{ border: 'none', background: 'none', color: '#cbd5e1', fontSize: '1.1rem' }}>✕</button>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      )}
+
+      {page === "shooting" && (
+        <div style={{ animation: 'fadeIn 0.2s ease' }}>
+          <div style={s.card}>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem' }}>Log Shooting</h3>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+              <input style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} placeholder="Made" type="number" value={shotsMade} onChange={e => setShotsMade(e.target.value)} />
+              <input style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} placeholder="Total" type="number" value={shotsTaken} onChange={e => setShotsTaken(e.target.value)} />
+            </div>
+            <button style={{ width: '100%', backgroundColor: '#ea580c', color: 'white', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1rem' }} onClick={addShot}>Save Session</button>
+          </div>
+
+          {shotSessions.length > 0 && (
+            <div style={{ ...s.card, height: '180px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={[...shotSessions].reverse()}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="date" hide />
+                  <YAxis domain={[0, 100]} hide />
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 20px rgba(0,0,0,0.1)' }} />
+                  <Line type="monotone" dataKey="percent" stroke="#ea580c" strokeWidth={4} dot={{ fill: '#ea580c', r: 4 }} activeDot={{ r: 7 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {shotSessions.map((s_item, i) => (
+            <div key={i} style={{ ...s.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: '800', fontSize: '1.2rem' }}>{s_item.made}/{s_item.taken}</div>
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 'bold' }}>{s_item.date}</div>
+              </div>
+              <div style={{ color: '#ea580c', fontWeight: '900', fontSize: '1.4rem' }}>{s_item.percent}%</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {page === "notes" && (
+        <div style={{ animation: 'fadeIn 0.2s ease' }}>
+          <textarea
+            style={{ width: '100%', height: '60vh', borderRadius: '20px', padding: '20px', border: '1px solid #e2e8f0', boxSizing: 'border-box', outline: 'none', fontSize: '1rem', lineHeight: '1.5', marginBottom: '15px' }}
+            placeholder="Film study, game notes, or personal goals..."
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+          />
+          <button onClick={exportData} style={{ width: '100%', background: 'none', border: '1px dashed #cbd5e1', padding: '10px', color: '#94a3b8', borderRadius: '10px', fontSize: '0.8rem' }}>
+            📥 Backup Data (For Transfer)
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Render
+import { createRoot } from 'react-dom/client';
+const root = createRoot(document.getElementById('root'));
+root.render(<BasketballPlanner />);
