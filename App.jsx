@@ -23,7 +23,7 @@ export default function BasketballPlanner() {
   const today = new Date();
   const [page, setPage] = useState("calendar");
   const [notes, setNotes] = useState("");
-  const [tempNotes, setTempNotes] = useState(""); // Holds text before saving
+  const [tempNotes, setTempNotes] = useState("");
   const [isSaved, setIsSaved] = useState(false);
   const [shotSessions, setShotSessions] = useState([]);
   const [shotsTaken, setShotsTaken] = useState("");
@@ -31,6 +31,10 @@ export default function BasketballPlanner() {
   const [events, setEvents] = useState({});
   const [selectedDate, setSelectedDate] = useState(today);
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(today));
+
+  // New Planning States
+  const [planTitle, setPlanTitle] = useState("");
+  const [planCategory, setPlanCategory] = useState("Skill Work");
 
   // --- Reset Calendar when switching pages ---
   useEffect(() => {
@@ -40,7 +44,7 @@ export default function BasketballPlanner() {
 
   // --- Persistence ---
   useEffect(() => {
-    const saved = localStorage.getItem("ballerMasterDataV4");
+    const saved = localStorage.getItem("ballerMasterDataV5");
     if (saved) {
       const data = JSON.parse(saved);
       setShotSessions(data.shots || []);
@@ -50,17 +54,16 @@ export default function BasketballPlanner() {
     }
   }, []);
 
-  // Save Shooting/Calendar automatically, but Notes only on button press
   useEffect(() => {
-    const data = { shots: shotSessions, notes: notes, events };
-    localStorage.setItem("ballerMasterDataV4", JSON.stringify(data));
+    const data = { shots: shotSessions, notes, events };
+    localStorage.setItem("ballerMasterDataV5", JSON.stringify(data));
   }, [shotSessions, notes, events]);
 
   // --- Logic ---
   const saveNotesManually = () => {
     setNotes(tempNotes);
     setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000); // Hide "Saved" message after 2 seconds
+    setTimeout(() => setIsSaved(false), 2000);
   };
 
   const addShot = () => {
@@ -75,11 +78,11 @@ export default function BasketballPlanner() {
   const deleteShot = (id) => setShotSessions(shotSessions.filter(s => s.id !== id));
   
   const addPlan = () => {
-    const plan = prompt(`Plan for ${selectedDate.toDateString()}:`);
-    if (plan) {
-      const key = selectedDate.toDateString();
-      setEvents({ ...events, [key]: [...(events[key] || []), plan] });
-    }
+    if (!planTitle.trim()) return alert("Please enter a title for your plan.");
+    const key = selectedDate.toDateString();
+    const newEntry = { category: planCategory, title: planTitle };
+    setEvents({ ...events, [key]: [...(events[key] || []), newEntry] });
+    setPlanTitle(""); // Clear input
   };
 
   const deletePlan = (dateKey, index) => {
@@ -88,10 +91,7 @@ export default function BasketballPlanner() {
   };
 
   const latestSession = shotSessions[0] || { percent: 0 };
-  const pieData = [
-    { name: "Made", value: latestSession.percent },
-    { name: "Missed", value: 100 - latestSession.percent }
-  ];
+  const pieData = [{ value: latestSession.percent }, { value: 100 - latestSession.percent }];
 
   // --- Styles ---
   const s = {
@@ -99,9 +99,9 @@ export default function BasketballPlanner() {
     card: { backgroundColor: 'white', padding: '12px', borderRadius: '20px', boxShadow: '0 2px 10px rgba(0,0,0,0.04)', marginBottom: '12px', border: '1px solid #f1f5f9' },
     nav: { display: 'flex', gap: '6px', marginBottom: '15px' },
     btn: (active) => ({ flex: 1, backgroundColor: active ? '#ea580c' : '#f8fafc', color: active ? 'white' : '#64748b', border: 'none', padding: '10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer' }),
-    input: { flex: 1, padding: '8px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.9rem', width: '60px', outline: 'none' },
-    grid: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' },
-    saveBtn: { width: '100%', backgroundColor: '#ea580c', color: 'white', border: 'none', padding: '15px', borderRadius: '15px', fontWeight: 'bold', marginTop: '10px', cursor: 'pointer' }
+    input: { flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.9rem', outline: 'none' },
+    select: { padding: '10px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.8rem', backgroundColor: '#f8fafc' },
+    grid: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }
   };
 
   return (
@@ -145,14 +145,30 @@ export default function BasketballPlanner() {
             </div>
           </div>
 
+          {/* NEW COMPACT PLANNING INPUT */}
           <div style={s.card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '0.9rem' }}>{selectedDate.getDate()} {selectedDate.toLocaleString('default', { month: 'short' })}</h3>
-              <button onClick={addPlan} style={{ backgroundColor: '#ea580c', color: 'white', border: 'none', borderRadius: '50%', width: '28px', height: '28px', fontSize: '1.2rem', fontWeight: 'bold' }}>+</button>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: '#94a3b8' }}>NEW PLAN FOR {selectedDate.getDate()} {selectedDate.toLocaleString('default', { month: 'short' })}</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <select style={s.select} value={planCategory} onChange={e => setPlanCategory(e.target.value)}>
+                  <option>Skill Work</option>
+                  <option>Game</option>
+                  <option>Gym/Lift</option>
+                  <option>Rest</option>
+                </select>
+                <input style={s.input} placeholder="Ex: Shooting Drills" value={planTitle} onChange={e => setPlanTitle(e.target.value)} />
+              </div>
+              <button onClick={addPlan} style={{ backgroundColor: '#ea580c', color: 'white', border: 'none', padding: '10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.85rem' }}>ADD TO SCHEDULE</button>
             </div>
+          </div>
+
+          <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
             {(events[selectedDate.toDateString()] || []).map((p, i) => (
-              <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid #f8fafc', display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                <span>🏀 {p}</span>
+              <div key={i} style={{ ...s.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 15px' }}>
+                <div>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 'bold', color: '#ea580c', display: 'block', marginBottom: '2px' }}>{p.category.toUpperCase()}</span>
+                  <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{p.title}</span>
+                </div>
                 <button onClick={() => deletePlan(selectedDate.toDateString(), i)} style={{ border: 'none', background: 'none', color: '#cbd5e1' }}>✕</button>
               </div>
             ))}
@@ -180,9 +196,9 @@ export default function BasketballPlanner() {
             </div>
             
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '10px', background: '#f8fafc', padding: '8px', borderRadius: '15px' }}>
-              <input style={s.input} placeholder="Made" type="number" value={shotsMade} onChange={e => setShotsMade(e.target.value)} />
+              <input style={{...s.input, width: '40px'}} placeholder="Made" type="number" value={shotsMade} onChange={e => setShotsMade(e.target.value)} />
               <span style={{fontWeight:'bold', color:'#cbd5e1'}}>/</span>
-              <input style={s.input} placeholder="Total" type="number" value={shotsTaken} onChange={e => setShotsTaken(e.target.value)} />
+              <input style={{...s.input, width: '40px'}} placeholder="Total" type="number" value={shotsTaken} onChange={e => setShotsTaken(e.target.value)} />
               <button onClick={addShot} style={{ backgroundColor: '#ea580c', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '10px', fontWeight: 'bold', fontSize: '0.8rem' }}>SAVE</button>
             </div>
           </div>
@@ -206,12 +222,9 @@ export default function BasketballPlanner() {
             value={tempNotes}
             onChange={e => setTempNotes(e.target.value)}
           />
-          <button style={s.saveBtn} onClick={saveNotesManually}>
+          <button style={{ ...s.btn(true), width: '100%', marginTop: '10px', padding: '15px' }} onClick={saveNotesManually}>
             {isSaved ? "✅ SAVED!" : "💾 SAVE NOTES"}
           </button>
-          <p style={{ textAlign: 'center', fontSize: '0.7rem', color: '#94a3b8', marginTop: '10px' }}>
-            Notes are only saved when you press the button above.
-          </p>
         </div>
       )}
     </div>
