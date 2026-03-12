@@ -54,7 +54,7 @@ export default function BallerPro() {
   const [planTitle, setPlanTitle] = useState("");
 
   useEffect(() => {
-    const saved = localStorage.getItem("baller_averages_v1");
+    const saved = localStorage.getItem("baller_delete_v1");
     if (saved) {
       const d = JSON.parse(saved);
       setShotSessions(d.shots || []);
@@ -66,7 +66,7 @@ export default function BallerPro() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("baller_averages_v1", JSON.stringify({ shots: shotSessions, notes, events, seasons }));
+    localStorage.setItem("baller_delete_v1", JSON.stringify({ shots: shotSessions, notes, events, seasons }));
   }, [shotSessions, notes, events, seasons]);
 
   const addSeason = () => {
@@ -90,7 +90,12 @@ export default function BallerPro() {
     setM3(""); setA3(""); setMMid(""); setAMid(""); setMLay(""); setALay(""); setMFt(""); setAFt(""); setPts(""); setReb(""); setAst(""); setTov("");
   };
 
-  // --- LOGIC FOR AVERAGES ---
+  const deleteSession = (id) => {
+    if (window.confirm("Are you sure you want to delete this game record?")) {
+      setShotSessions(shotSessions.filter(s => s.id !== id));
+    }
+  };
+
   const filteredSessions = shotSessions.filter(s => s.season === activeSeason);
   const gameCount = filteredSessions.length;
   
@@ -102,7 +107,6 @@ export default function BallerPro() {
   }), { pts:0, reb:0, ast:0, tov:0 });
 
   const avg = (total) => gameCount > 0 ? (total / gameCount).toFixed(1) : "0.0";
-
   const latest = filteredSessions[0] || { fg:0, ft:0, p3:0, pMid:0, pLay:0 };
   const careerTotals = shotSessions.reduce((acc, s) => ({
     pts: acc.pts + (s.box?.pts || 0), reb: acc.reb + (s.box?.reb || 0), ast: acc.ast + (s.box?.ast || 0), tov: acc.tov + (s.box?.tov || 0)
@@ -170,9 +174,26 @@ export default function BallerPro() {
             </div>
             <button onClick={addSession} style={{ width: '100%', padding: '14px', backgroundColor: '#ea580c', border: 'none', color: 'white', borderRadius: '15px', fontWeight: 'bold', marginTop: '15px' }}>SAVE GAME STATS</button>
           </div>
+
+          {/* SEASON HISTORY LIST */}
+          <div style={{marginTop: '20px'}}>
+            <h4 style={{fontSize:'0.75rem', color:'#94a3b8', textTransform:'uppercase', marginLeft:'10px', marginBottom:'10px'}}>Season Game Log</h4>
+            {filteredSessions.length === 0 ? <p style={{fontSize:'0.8rem', color:'#475569', marginLeft:'10px'}}>No games logged yet.</p> : 
+              filteredSessions.map(sess => (
+                <div key={sess.id} style={{...s.card, display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 18px'}}>
+                  <div>
+                    <div style={{fontSize:'0.85rem', fontWeight:'bold'}}>{sess.date}</div>
+                    <div style={{fontSize:'0.7rem', color:'#ea580c'}}>{sess.box.pts} PTS • {sess.fg}% FG</div>
+                  </div>
+                  <button onClick={() => deleteSession(sess.id)} style={{background:'#334155', border:'none', color:'#ef4444', borderRadius:'8px', padding:'5px 10px', fontSize:'0.7rem', fontWeight:'bold'}}>DELETE</button>
+                </div>
+              ))
+            }
+          </div>
         </div>
       )}
 
+      {/* CAREER, CALENDAR, AND NOTES REMAIN UNCHANGED FOR STABILITY */}
       {page === 'career' && (
         <div style={{...s.card, textAlign:'center', padding:'30px 15px'}}>
            <div style={{fontSize:'0.7rem', color:'#94a3b8', textTransform:'uppercase'}}>Total Career Points</div>
