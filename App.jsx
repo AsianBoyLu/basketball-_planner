@@ -19,11 +19,10 @@ function buildMonthGrid(date) {
   return days;
 }
 
-// Logic to determine color based on percentage
 const getStatColor = (percent) => {
-  if (percent < 60) return "#ef4444"; // Red
-  if (percent < 70) return "#facc15"; // Yellow
-  return "#22c55e"; // Green
+  if (percent < 60) return "#ef4444"; 
+  if (percent < 70) return "#facc15"; 
+  return "#22c55e"; 
 };
 
 const StatRing = ({ percent, label }) => {
@@ -64,7 +63,7 @@ export default function BasketballPlanner() {
   const [planTitle, setPlanTitle] = useState("");
 
   useEffect(() => {
-    const saved = localStorage.getItem("ballerMasterDataV8");
+    const saved = localStorage.getItem("ballerMasterDataV9");
     if (saved) {
       const data = JSON.parse(saved);
       setShotSessions(data.shots || []);
@@ -75,7 +74,7 @@ export default function BasketballPlanner() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("ballerMasterDataV8", JSON.stringify({ shots: shotSessions, notes, events }));
+    localStorage.setItem("ballerMasterDataV9", JSON.stringify({ shots: shotSessions, notes, events }));
   }, [shotSessions, notes, events]);
 
   const addShotSession = () => {
@@ -101,6 +100,12 @@ export default function BasketballPlanner() {
 
     setShotSessions([session, ...shotSessions]);
     setM3(""); setA3(""); setMMid(""); setAMid(""); setMLay(""); setALay(""); setMFt(""); setAFt("");
+  };
+
+  const deleteShotSession = (id) => {
+    if (window.confirm("Delete this session?")) {
+      setShotSessions(shotSessions.filter(s => s.id !== id));
+    }
   };
 
   const latest = shotSessions[0] || { fgPercent: 0, ftPercent: 0, p3: 0, pMid: 0, pLay: 0 };
@@ -155,6 +160,23 @@ export default function BasketballPlanner() {
               ))}
               <button onClick={addShotSession} style={{ width:'100%', backgroundColor: '#ea580c', color: 'white', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 'bold', marginTop: '5px' }}>SAVE SESSION</button>
             </div>
+          </div>
+
+          <div style={{ marginTop: '20px' }}>
+            <h4 style={{ fontSize: '0.8rem', color: '#94a3b8', marginLeft: '5px', marginBottom: '10px' }}>HISTORY</h4>
+            {shotSessions.map(sess => (
+              <div key={sess.id} style={{ ...s.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>{sess.date}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#ea580c', fontWeight: 'bold' }}>FG: {sess.fgPercent}% | FT: {sess.ftPercent}%</div>
+                </div>
+                <button 
+                  onClick={() => deleteShotSession(sess.id)} 
+                  style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '8px', padding: '5px 10px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  ✕
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
