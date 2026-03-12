@@ -54,7 +54,7 @@ export default function BallerPro() {
   const [planTitle, setPlanTitle] = useState("");
 
   useEffect(() => {
-    const saved = localStorage.getItem("ballerCareerV_ULTIMATE_CAL");
+    const saved = localStorage.getItem("baller_no_auth_v1");
     if (saved) {
       const d = JSON.parse(saved);
       setShotSessions(d.shots || []);
@@ -66,11 +66,11 @@ export default function BallerPro() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("ballerCareerV_ULTIMATE_CAL", JSON.stringify({ shots: shotSessions, notes, events, seasons }));
+    localStorage.setItem("baller_no_auth_v1", JSON.stringify({ shots: shotSessions, notes, events, seasons }));
   }, [shotSessions, notes, events, seasons]);
 
   const addSeason = () => {
-    const name = prompt("Enter Season Name:");
+    const name = prompt("New Season Name:");
     if (name && !seasons.includes(name)) { setSeasons([...seasons, name]); setActiveSeason(name); }
   };
 
@@ -90,11 +90,11 @@ export default function BallerPro() {
     setM3(""); setA3(""); setMMid(""); setAMid(""); setMLay(""); setALay(""); setMFt(""); setAFt(""); setPts(""); setReb(""); setAst(""); setTov("");
   };
 
-  const filteredShots = shotSessions.filter(s => s.season === activeSeason);
-  const latest = filteredShots[0] || { fg:0, ft:0, p3:0, pMid:0, pLay:0, box: {pts:0, reb:0, ast:0, tov:0} };
   const careerTotals = shotSessions.reduce((acc, s) => ({
     pts: acc.pts + (s.box?.pts || 0), reb: acc.reb + (s.box?.reb || 0), ast: acc.ast + (s.box?.ast || 0), tov: acc.tov + (s.box?.tov || 0)
   }), { pts:0, reb:0, ast:0, tov:0 });
+
+  const latest = shotSessions.filter(s => s.season === activeSeason)[0] || { fg:0, ft:0, p3:0, pMid:0, pLay:0, box: {pts:0, reb:0, ast:0, tov:0} };
 
   const s = {
     container: { maxWidth: '450px', margin: '0 auto', padding: '15px', backgroundColor: '#0f172a', minHeight: '100vh', color: 'white', fontFamily: 'sans-serif' },
@@ -111,7 +111,7 @@ export default function BallerPro() {
            <select style={{ background: '#1e293b', color: 'white', border: '1px solid #334155', padding:'6px', borderRadius:'10px', fontSize: '0.8rem' }} value={activeSeason} onChange={e => setActiveSeason(e.target.value)}>
              {seasons.map(sn => <option key={sn} value={sn}>{sn}</option>)}
            </select>
-           <button onClick={addSeason} style={{background:'#334155', color:'white', border:'none', borderRadius:'10px', padding:'0 12px', fontSize:'0.75rem', fontWeight:'bold'}}>+ NEW SEASON</button>
+           <button onClick={addSeason} style={{background:'#334155', color:'white', border:'none', borderRadius:'10px', padding:'0 12px', fontSize:'0.75rem', fontWeight:'bold'}}>+ SEASON</button>
         </div>
       </header>
 
@@ -125,7 +125,6 @@ export default function BallerPro() {
       {page === 'stats' && (
         <div style={{animation: 'fadeIn 0.2s'}}>
           <div style={s.card}>
-            <h4 style={{marginTop:0, fontSize:'0.75rem', color:'#94a3b8', textAlign:'center', textTransform:'uppercase'}}>{activeSeason} DASHBOARD</h4>
             <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '10px' }}>
               <StatRing label="3PT" percent={latest.p3} />
               <StatRing label="MID" percent={latest.pMid} />
@@ -141,7 +140,7 @@ export default function BallerPro() {
           </div>
 
           <div style={s.card}>
-            <h4 style={{marginTop:0, fontSize:'0.8rem', color:'#ea580c', textAlign:'center'}}>LOG NEW SESSION</h4>
+            <h4 style={{marginTop:0, fontSize:'0.8rem', color:'#ea580c', textAlign:'center'}}>LOG SESSION</h4>
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '15px', marginTop:'10px' }}>
               <div>
                 <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.75rem', marginBottom:'6px'}}>3PT <div style={{display:'flex', gap:'2px'}}><input style={s.input} value={m3} onChange={e=>setM3(e.target.value)}/>/<input style={s.input} value={a3} onChange={e=>setA3(e.target.value)}/></div></div>
@@ -156,31 +155,20 @@ export default function BallerPro() {
                 <div style={{fontSize:'0.75rem'}}>TOV <input style={{...s.input, width:'50px'}} value={tov} onChange={e=>setTov(e.target.value)}/></div>
               </div>
             </div>
-            <button onClick={addSession} style={{ width: '100%', padding: '14px', backgroundColor: '#ea580c', border: 'none', color: 'white', borderRadius: '15px', fontWeight: 'bold', marginTop: '15px' }}>SAVE SESSION DATA</button>
+            <button onClick={addSession} style={{ width: '100%', padding: '14px', backgroundColor: '#ea580c', border: 'none', color: 'white', borderRadius: '15px', fontWeight: 'bold', marginTop: '15px' }}>SAVE SESSION</button>
           </div>
         </div>
       )}
 
       {page === 'career' && (
-        <div style={{animation: 'fadeIn 0.2s'}}>
-          <div style={{...s.card, textAlign:'center', padding:'30px 15px'}}>
-             <div style={{fontSize:'0.7rem', color:'#94a3b8', textTransform:'uppercase', letterSpacing:'2px'}}>Career Points</div>
-             <div style={{fontSize:'3.5rem', fontWeight:'900', color:'#ea580c'}}>{careerTotals.pts}</div>
-          </div>
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px'}}>
-             <div style={{...s.card, textAlign:'center'}}>
-                <div style={{fontSize:'0.6rem', color:'#94a3b8'}}>REB</div>
-                <div style={{fontSize:'1.5rem', fontWeight:'bold'}}>{careerTotals.reb}</div>
-             </div>
-             <div style={{...s.card, textAlign:'center'}}>
-                <div style={{fontSize:'0.6rem', color:'#94a3b8'}}>AST</div>
-                <div style={{fontSize:'1.5rem', fontWeight:'bold'}}>{careerTotals.ast}</div>
-             </div>
-             <div style={{...s.card, textAlign:'center'}}>
-                <div style={{fontSize:'0.6rem', color:'#94a3b8'}}>TOV</div>
-                <div style={{fontSize:'1.5rem', fontWeight:'bold', color:'#ef4444'}}>{careerTotals.tov}</div>
-             </div>
-          </div>
+        <div style={{...s.card, textAlign:'center', padding:'30px 15px'}}>
+           <div style={{fontSize:'0.7rem', color:'#94a3b8', textTransform:'uppercase'}}>Total Career Points</div>
+           <div style={{fontSize:'4rem', fontWeight:'900', color:'#ea580c'}}>{careerTotals.pts}</div>
+           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px', marginTop:20}}>
+              <div><div style={{fontSize:'0.6rem', color:'#94a3b8'}}>REB</div><div>{careerTotals.reb}</div></div>
+              <div><div style={{fontSize:'0.6rem', color:'#94a3b8'}}>AST</div><div>{careerTotals.ast}</div></div>
+              <div><div style={{fontSize:'0.6rem', color:'#94a3b8'}}>TOV</div><div>{careerTotals.tov}</div></div>
+           </div>
         </div>
       )}
 
@@ -189,7 +177,7 @@ export default function BallerPro() {
           <div style={s.card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
               <button onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth()-1)))} style={{background:'none', border:'none', color:'white', fontSize:'1.2rem'}}>‹</button>
-              <b style={{fontSize:'0.9rem'}}>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</b>
+              <b>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</b>
               <button onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth()+1)))} style={{background:'none', border:'none', color:'white', fontSize:'1.2rem'}}>›</button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
@@ -201,25 +189,24 @@ export default function BallerPro() {
                     height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', fontSize: '0.8rem', 
                     backgroundColor: isSelected ? '#ea580c' : 'transparent', 
                     border: isToday && !isSelected ? '2px solid #ea580c' : 'none',
-                    color: d.getMonth() !== currentMonth.getMonth() ? '#475569' : 'white',
-                    fontWeight: isToday ? 'bold' : 'normal'
+                    color: d.getMonth() !== currentMonth.getMonth() ? '#475569' : 'white'
                   }}>{d.getDate()}</div>
                 );
               })}
             </div>
           </div>
           <div style={s.card}>
-            <input style={{width:'100%', padding:'12px', borderRadius:'10px', backgroundColor:'#334155', border:'none', color:'white', boxSizing:'border-box', outline:'none'}} placeholder="Plan today's session..." value={planTitle} onChange={e=>setPlanTitle(e.target.value)} />
-            <button onClick={() => { if(planTitle){ setEvents({...events, [selectedDate.toDateString()]: [...(events[selectedDate.toDateString()]||[]), {title:planTitle}]}); setPlanTitle(""); } }} style={{width:'100%', marginTop:10, padding:12, backgroundColor:'#ea580c', border:'none', color:'white', borderRadius:10, fontWeight:'bold'}}>ADD TO PLANNER</button>
+            <input style={{width:'100%', padding:'12px', borderRadius:'10px', backgroundColor:'#334155', border:'none', color:'white', boxSizing:'border-box', outline:'none'}} placeholder="Plan today..." value={planTitle} onChange={e=>setPlanTitle(e.target.value)} />
+            <button onClick={() => { if(planTitle){ setEvents({...events, [selectedDate.toDateString()]: [...(events[selectedDate.toDateString()]||[]), {title:planTitle}]}); setPlanTitle(""); } }} style={{width:'100%', marginTop:10, padding:12, backgroundColor:'#ea580c', border:'none', color:'white', borderRadius:10, fontWeight:'bold'}}>ADD</button>
           </div>
         </div>
       )}
 
       {page === 'notes' && (
         <div>
-          <textarea style={{ width: '100%', height: '62vh', borderRadius: '20px', padding: '18px', backgroundColor: '#1e293b', border: '1px solid #334155', color: 'white', outline: 'none', boxSizing:'border-box', fontSize:'1rem', lineHeight:'1.5' }} placeholder="Notes..." value={tempNotes} onChange={e => setTempNotes(e.target.value)} />
+          <textarea style={{ width: '100%', height: '62vh', borderRadius: '20px', padding: '18px', backgroundColor: '#1e293b', border: '1px solid #334155', color: 'white', outline: 'none', boxSizing:'border-box', fontSize:'1rem' }} value={tempNotes} onChange={e => setTempNotes(e.target.value)} />
           <button style={{ width: '100%', backgroundColor: isSaved ? '#22c55e' : '#ea580c', color: 'white', border: 'none', padding: '16px', borderRadius: '15px', fontWeight: 'bold', marginTop: '12px' }} onClick={() => { setNotes(tempNotes); setIsSaved(true); setTimeout(()=>setIsSaved(false), 2000); }}>
-            {isSaved ? "✅ NOTES SAVED" : "💾 SAVE NOTES"}
+            {isSaved ? "✅ SAVED" : "💾 SAVE NOTES"}
           </button>
         </div>
       )}
