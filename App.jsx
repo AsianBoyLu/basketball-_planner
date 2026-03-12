@@ -1,23 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 
-// Built-in Simple Components to prevent errors
-const Card = ({ children, className = "" }) => (
-  <div className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm ${className}`}>{children}</div>
-);
-const CardContent = ({ children, className = "" }) => <div className={`p-4 ${className}`}>{children}</div>;
-const Button = ({ children, onClick, variant = "default", className = "" }) => {
-  const base = "px-4 py-2 rounded-lg font-bold transition-all active:scale-95 text-sm ";
-  const styles = variant === "default" ? "bg-orange-600 text-white" : "bg-slate-200 text-slate-900 dark:bg-slate-800 dark:text-white";
-  return <button onClick={onClick} className={base + styles + className}>{children}</button>;
-};
-
 const motivations = [
   "Great players are made when nobody is watching.",
   "Every shot you take today is one closer to your dream.",
   "Discipline beats talent when talent doesn't work.",
-  "Shooters shoot. Keep going.",
-  "Your future self is watching your work today."
+  "Shooters shoot. Keep going."
 ];
 
 export default function BasketballPlanner() {
@@ -26,85 +14,122 @@ export default function BasketballPlanner() {
   const [shotSessions, setShotSessions] = useState([]);
   const [shotsTaken, setShotsTaken] = useState("");
   const [shotsMade, setShotsMade] = useState("");
-  const [motivation] = useState(motivations[Math.floor(Math.random() * motivations.length)]);
+  const [events, setEvents] = useState({}); // For the calendar plans
 
+  // Auto-save data
   useEffect(() => {
-    const saved = localStorage.getItem("ballData");
+    const saved = localStorage.getItem("ballerData");
     if (saved) {
       const data = JSON.parse(saved);
       setShotSessions(data.shots || []);
       setNotes(data.notes || "");
+      setEvents(data.events || {});
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("ballData", JSON.stringify({ shots: shotSessions, notes }));
-  }, [shotSessions, notes]);
+    localStorage.setItem("ballerData", JSON.stringify({ shots: shotSessions, notes, events }));
+  }, [shotSessions, notes, events]);
 
   const addShot = () => {
-    if (!shotsTaken || !shotsMade) return;
-    const session = { date: new Date().toLocaleDateString(), taken: Number(shotsTaken), made: Number(shotsMade), percent: (Number(shotsMade) / Number(shotsTaken)) * 100 };
+    const made = parseFloat(shotsMade);
+    const total = parseFloat(shotsTaken);
+    if (!made || !total || made > total) {
+      alert("Check your numbers! Made shots can't be more than total.");
+      return;
+    }
+    const session = { 
+      date: new Date().toLocaleDateString(), 
+      taken: total, 
+      made: made, 
+      percent: Math.round((made / total) * 100) 
+    };
     setShotSessions([session, ...shotSessions]);
     setShotsTaken(""); setShotsMade("");
   };
 
+  const addPlan = () => {
+    const plan = prompt("What is the plan for today?");
+    if (plan) {
+      const today = new Date().toDateString();
+      const currentPlans = events[today] || [];
+      setEvents({ ...events, [today]: [...currentPlans, plan] });
+    }
+  };
+
+  // Styles
+  const containerStyle = { maxWidth: '500px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' };
+  const cardStyle = { backgroundColor: 'white', padding: '15px', borderRadius: '15px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', marginBottom: '15px' };
+  const buttonStyle = { backgroundColor: '#ea580c', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginRight: '10px' };
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 text-slate-900 dark:text-white font-sans">
-      <div className="max-w-md mx-auto space-y-4">
-        <h1 className="text-3xl font-black italic text-orange-600">BALLER PRO</h1>
-        
-        <div className="flex gap-2">
-          <Button onClick={() => setPage("calendar")}>📈 Progress</Button>
-          <Button onClick={() => setPage("notes")} variant="outline">📝 Notes</Button>
-        </div>
+    <div style={containerStyle}>
+      <h1 style={{ color: '#ea580c', fontStyle: 'italic', fontWeight: '900', fontSize: '2rem', marginBottom: '5px' }}>BALLER PRO</h1>
+      <p style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '20px' }}>{motivations[0]}</p>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <button style={buttonStyle} onClick={() => setPage("calendar")}>📅 Planner</button>
+        <button style={buttonStyle} onClick={() => setPage("shooting")}>📈 Shooting</button>
+        <button style={{ ...buttonStyle, backgroundColor: '#64748b' }} onClick={() => setPage("notes")}>📝 Notes</button>
+      </div>
 
-        <Card><CardContent className="italic text-center text-sm">"{motivation}"</CardContent></Card>
-
-        {page === "calendar" ? (
-          <div className="space-y-4">
-            <Card>
-              <CardContent className="space-y-3">
-                <h2 className="font-bold">Log Shooting Session</h2>
-                <div className="flex gap-2">
-                  <input className="w-1/2 p-2 border rounded dark:bg-slate-800" placeholder="Made" type="number" value={shotsMade} onChange={e => setShotsMade(e.target.value)} />
-                  <input className="w-1/2 p-2 border rounded dark:bg-slate-800" placeholder="Total" type="number" value={shotsTaken} onChange={e => setShotsTaken(e.target.value)} />
-                </div>
-                <Button className="w-full" onClick={addShot}>Save Session</Button>
-              </CardContent>
-            </Card>
-
-            <div className="h-48 w-full">
-              <ResponsiveContainer>
-                <LineChart data={[...shotSessions].reverse()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" hide />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="percent" stroke="#ea580c" strokeWidth={3} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            {shotSessions.map((s, i) => (
-              <div key={i} className="p-3 bg-white dark:bg-slate-900 rounded-lg border flex justify-between">
-                <span className="font-bold">{s.made}/{s.taken}</span>
-                <span className="text-orange-600 font-bold">{s.percent.toFixed(1)}%</span>
-              </div>
+      {page === "calendar" && (
+        <div>
+          <div style={cardStyle}>
+            <h3>Today's Training</h3>
+            <button style={{ ...buttonStyle, width: '100%', marginBottom: '10px' }} onClick={addPlan}>+ Add Workout Plan</button>
+            {(events[new Date().toDateString()] || []).map((p, i) => (
+              <div key={i} style={{ padding: '10px', borderBottom: '1px solid #eee' }}>🏀 {p}</div>
             ))}
           </div>
-        ) : (
-          <textarea 
-            className="w-full h-64 p-4 rounded-xl border dark:bg-slate-900"
-            placeholder="Training notes..."
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-          />
-        )}
-      </div>
+        </div>
+      )}
+
+      {page === "shooting" && (
+        <div>
+          <div style={cardStyle}>
+            <h3>Log Shooting</h3>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+              <input style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} placeholder="Made" type="number" value={shotsMade} onChange={e => setShotsMade(e.target.value)} />
+              <input style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} placeholder="Total" type="number" value={shotsTaken} onChange={e => setShotsTaken(e.target.value)} />
+            </div>
+            <button style={{ ...buttonStyle, width: '100%' }} onClick={addShot}>Save Session</button>
+          </div>
+
+          <div style={{ ...cardStyle, height: '200px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={[...shotSessions].reverse()}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" hide />
+                <YAxis domain={[0, 100]} />
+                <Tooltip />
+                <Line type="monotone" dataKey="percent" stroke="#ea580c" strokeWidth={3} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {shotSessions.map((s, i) => (
+            <div key={i} style={cardStyle}>
+              <span style={{ fontWeight: 'bold' }}>{s.made}/{s.taken}</span>
+              <span style={{ float: 'right', color: '#ea580c', fontWeight: 'bold' }}>{s.percent}% Accuracy</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {page === "notes" && (
+        <textarea 
+          style={{ width: '100%', height: '300px', borderRadius: '15px', padding: '15px', border: '1px solid #ddd' }}
+          placeholder="Write film notes or game reflections..."
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+        />
+      )}
     </div>
   );
 }
+
+// Start the app
 import { createRoot } from 'react-dom/client';
-const container = document.getElementById('root');
-const root = createRoot(container);
+const root = createRoot(document.getElementById('root'));
 root.render(<BasketballPlanner />);
