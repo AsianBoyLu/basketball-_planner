@@ -53,8 +53,9 @@ export default function BallerPro() {
   const [ast, setAst] = useState(""); const [tov, setTov] = useState("");
   const [planTitle, setPlanTitle] = useState("");
 
+  // --- INITIAL LOAD ---
   useEffect(() => {
-    const saved = localStorage.getItem("baller_delete_v1");
+    const saved = localStorage.getItem("baller_master_v11");
     if (saved) {
       const d = JSON.parse(saved);
       setShotSessions(d.shots || []);
@@ -65,8 +66,11 @@ export default function BallerPro() {
     }
   }, []);
 
+  // --- INSTANT SAVE LOGIC ---
+  // This triggers every time events, shots, or seasons change
   useEffect(() => {
-    localStorage.setItem("baller_delete_v1", JSON.stringify({ shots: shotSessions, notes, events, seasons }));
+    const dataToSave = { shots: shotSessions, notes, events, seasons };
+    localStorage.setItem("baller_master_v11", JSON.stringify(dataToSave));
   }, [shotSessions, notes, events, seasons]);
 
   const addSeason = () => {
@@ -91,7 +95,7 @@ export default function BallerPro() {
   };
 
   const deleteSession = (id) => {
-    if (window.confirm("Are you sure you want to delete this game record?")) {
+    if (window.confirm("Delete this game record?")) {
       setShotSessions(shotSessions.filter(s => s.id !== id));
     }
   };
@@ -138,76 +142,8 @@ export default function BallerPro() {
         <button style={s.navBtn(page === 'notes')} onClick={() => setPage('notes')}>📝</button>
       </div>
 
-      {page === 'stats' && (
-        <div style={{animation: 'fadeIn 0.2s'}}>
-          <div style={s.card}>
-            <h4 style={{marginTop:0, fontSize:'0.75rem', color:'#94a3b8', textAlign:'center', textTransform:'uppercase'}}>{activeSeason} AVERAGES</h4>
-            <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '10px' }}>
-              <StatRing label="3PT %" percent={latest.p3} />
-              <StatRing label="MID %" percent={latest.pMid} />
-              <StatRing label="LAY %" percent={latest.pLay} />
-              <StatRing label="FT %" percent={latest.ft} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', borderTop: '1px solid #334155', paddingTop: '10px' }}>
-              <div style={{textAlign:'center'}}><div style={{fontSize:'1.1rem', fontWeight:'bold', color:'#ea580c'}}>{avg(seasonAverages.pts)}</div><div style={{fontSize:'0.55rem', color:'#94a3b8'}}>PPG</div></div>
-              <div style={{textAlign:'center'}}><div style={{fontSize:'1.1rem', fontWeight:'bold', color:'#ea580c'}}>{avg(seasonAverages.reb)}</div><div style={{fontSize:'0.55rem', color:'#94a3b8'}}>RPG</div></div>
-              <div style={{textAlign:'center'}}><div style={{fontSize:'1.1rem', fontWeight:'bold', color:'#ea580c'}}>{avg(seasonAverages.ast)}</div><div style={{fontSize:'0.55rem', color:'#94a3b8'}}>APG</div></div>
-              <div style={{textAlign:'center'}}><div style={{fontSize:'1.1rem', fontWeight:'bold', color:'#ea580c'}}>{avg(seasonAverages.tov)}</div><div style={{fontSize:'0.55rem', color:'#94a3b8'}}>TOPG</div></div>
-            </div>
-          </div>
-
-          <div style={s.card}>
-            <h4 style={{marginTop:0, fontSize:'0.8rem', color:'#ea580c', textAlign:'center'}}>LOG NEW GAME</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '15px', marginTop:'10px' }}>
-              <div>
-                <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.75rem', marginBottom:'6px'}}>3PT <div style={{display:'flex', gap:'2px'}}><input style={s.input} value={m3} onChange={e=>setM3(e.target.value)}/>/<input style={s.input} value={a3} onChange={e=>setA3(e.target.value)}/></div></div>
-                <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.75rem', marginBottom:'6px'}}>MID <div style={{display:'flex', gap:'2px'}}><input style={s.input} value={mMid} onChange={e=>setMMid(e.target.value)}/>/<input style={s.input} value={aMid} onChange={e=>setAMid(e.target.value)}/></div></div>
-                <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.75rem', marginBottom:'6px'}}>LAY <div style={{display:'flex', gap:'2px'}}><input style={s.input} value={mLay} onChange={e=>setMLay(e.target.value)}/>/<input style={s.input} value={aLay} onChange={e=>setALay(e.target.value)}/></div></div>
-                <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.75rem'}}>FT <div style={{display:'flex', gap:'2px'}}><input style={s.input} value={mFt} onChange={e=>setMFt(e.target.value)}/>/<input style={s.input} value={aFt} onChange={e=>setAFt(e.target.value)}/></div></div>
-              </div>
-              <div style={{borderLeft:'1px solid #334155', paddingLeft:'15px'}}>
-                <div style={{fontSize:'0.75rem', marginBottom:'6px'}}>PTS <input style={{...s.input, width:'50px'}} value={pts} onChange={e=>setPts(e.target.value)}/></div>
-                <div style={{fontSize:'0.75rem', marginBottom:'6px'}}>REB <input style={{...s.input, width:'50px'}} value={reb} onChange={e=>setReb(e.target.value)}/></div>
-                <div style={{fontSize:'0.75rem', marginBottom:'6px'}}>AST <input style={{...s.input, width:'50px'}} value={ast} onChange={e=>setAst(e.target.value)}/></div>
-                <div style={{fontSize:'0.75rem'}}>TOV <input style={{...s.input, width:'50px'}} value={tov} onChange={e=>setTov(e.target.value)}/></div>
-              </div>
-            </div>
-            <button onClick={addSession} style={{ width: '100%', padding: '14px', backgroundColor: '#ea580c', border: 'none', color: 'white', borderRadius: '15px', fontWeight: 'bold', marginTop: '15px' }}>SAVE GAME STATS</button>
-          </div>
-
-          {/* SEASON HISTORY LIST */}
-          <div style={{marginTop: '20px'}}>
-            <h4 style={{fontSize:'0.75rem', color:'#94a3b8', textTransform:'uppercase', marginLeft:'10px', marginBottom:'10px'}}>Season Game Log</h4>
-            {filteredSessions.length === 0 ? <p style={{fontSize:'0.8rem', color:'#475569', marginLeft:'10px'}}>No games logged yet.</p> : 
-              filteredSessions.map(sess => (
-                <div key={sess.id} style={{...s.card, display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 18px'}}>
-                  <div>
-                    <div style={{fontSize:'0.85rem', fontWeight:'bold'}}>{sess.date}</div>
-                    <div style={{fontSize:'0.7rem', color:'#ea580c'}}>{sess.box.pts} PTS • {sess.fg}% FG</div>
-                  </div>
-                  <button onClick={() => deleteSession(sess.id)} style={{background:'#334155', border:'none', color:'#ef4444', borderRadius:'8px', padding:'5px 10px', fontSize:'0.7rem', fontWeight:'bold'}}>DELETE</button>
-                </div>
-              ))
-            }
-          </div>
-        </div>
-      )}
-
-      {/* CAREER, CALENDAR, AND NOTES REMAIN UNCHANGED FOR STABILITY */}
-      {page === 'career' && (
-        <div style={{...s.card, textAlign:'center', padding:'30px 15px'}}>
-           <div style={{fontSize:'0.7rem', color:'#94a3b8', textTransform:'uppercase'}}>Total Career Points</div>
-           <div style={{fontSize:'4rem', fontWeight:'900', color:'#ea580c'}}>{careerTotals.pts}</div>
-           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px', marginTop:20}}>
-              <div><div style={{fontSize:'0.6rem', color:'#94a3b8'}}>REB</div><div>{careerTotals.reb}</div></div>
-              <div><div style={{fontSize:'0.6rem', color:'#94a3b8'}}>AST</div><div>{careerTotals.ast}</div></div>
-              <div><div style={{fontSize:'0.6rem', color:'#94a3b8'}}>TOV</div><div>{careerTotals.tov}</div></div>
-           </div>
-        </div>
-      )}
-
       {page === 'calendar' && (
-        <div>
+        <div style={{animation: 'fadeIn 0.2s'}}>
           <div style={s.card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
               <button onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth()-1)))} style={{background:'none', border:'none', color:'white', fontSize:'1.2rem'}}>‹</button>
@@ -236,17 +172,90 @@ export default function BallerPro() {
             </div>
           </div>
           <div style={s.card}>
-            <input style={{width:'100%', padding:'12px', borderRadius:'10px', backgroundColor:'#334155', border:'none', color:'white', boxSizing:'border-box', outline:'none'}} placeholder="Plan today..." value={planTitle} onChange={e=>setPlanTitle(e.target.value)} />
-            <button onClick={() => { if(planTitle){ setEvents({...events, [selectedDate.toDateString()]: [...(events[selectedDate.toDateString()]||[]), {title:planTitle}]}); setPlanTitle(""); } }} style={{width:'100%', marginTop:10, padding:12, backgroundColor:'#ea580c', border:'none', color:'white', borderRadius:10, fontWeight:'bold'}}>ADD</button>
+            <h4 style={{margin:'0 0 10px 0', fontSize:'0.8rem', color:'#ea580c'}}>ADD PLAN</h4>
+            <div style={{display:'flex', gap:'8px'}}>
+              <input style={{flex:1, padding:'10px', borderRadius:'10px', backgroundColor:'#334155', border:'none', color:'white', outline:'none'}} placeholder="e.g. Shooting Workout" value={planTitle} onChange={e=>setPlanTitle(e.target.value)} />
+              <button onClick={() => { if(planTitle){ 
+                  const updated = {...events, [selectedDate.toDateString()]: [...(events[selectedDate.toDateString()]||[]), {title:planTitle}]};
+                  setEvents(updated); // SAVES INSTANTLY VIA USEEFFECT
+                  setPlanTitle(""); 
+              }}} style={{padding:'10px 20px', backgroundColor:'#ea580c', border:'none', color:'white', borderRadius:10, fontWeight:'bold'}}>ADD</button>
+            </div>
           </div>
           <div style={{maxHeight:'200px', overflowY:'auto'}}>
+            <h4 style={{margin:'5px 0 10px 10px', fontSize:'0.7rem', color:'#94a3b8', textTransform:'uppercase'}}>Daily Agenda</h4>
             {(events[selectedDate.toDateString()] || []).map((p, i) => (
                 <div key={i} style={{...s.card, display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 18px'}}>
                    <span style={{fontSize:'0.9rem'}}>🏀 {p.title}</span>
-                   <button onClick={() => { const updated = events[selectedDate.toDateString()].filter((_,idx) => idx !== i); setEvents({...events, [selectedDate.toDateString()]: updated}); }} style={{background:'none', border:'none', color:'#475569'}}>✕</button>
+                   <button onClick={() => { 
+                       const filtered = events[selectedDate.toDateString()].filter((_,idx) => idx !== i);
+                       setEvents({...events, [selectedDate.toDateString()]: filtered}); // SAVES INSTANTLY
+                   }} style={{background:'none', border:'none', color:'#475569'}}>✕</button>
                 </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* STATS PAGE */}
+      {page === 'stats' && (
+        <div style={{animation: 'fadeIn 0.2s'}}>
+          <div style={s.card}>
+            <h4 style={{marginTop:0, fontSize:'0.75rem', color:'#94a3b8', textAlign:'center', textTransform:'uppercase'}}>{activeSeason} AVERAGES</h4>
+            <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '10px' }}>
+              <StatRing label="3PT %" percent={latest.p3} />
+              <StatRing label="MID %" percent={latest.pMid} />
+              <StatRing label="LAY %" percent={latest.pLay} />
+              <StatRing label="FT %" percent={latest.ft} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', borderTop: '1px solid #334155', paddingTop: '10px' }}>
+              <div style={{textAlign:'center'}}><div style={{fontSize:'1.1rem', fontWeight:'bold', color:'#ea580c'}}>{avg(seasonAverages.pts)}</div><div style={{fontSize:'0.55rem', color:'#94a3b8'}}>PPG</div></div>
+              <div style={{textAlign:'center'}}><div style={{fontSize:'1.1rem', fontWeight:'bold', color:'#ea580c'}}>{avg(seasonAverages.reb)}</div><div style={{fontSize:'0.55rem', color:'#94a3b8'}}>RPG</div></div>
+              <div style={{textAlign:'center'}}><div style={{fontSize:'1.1rem', fontWeight:'bold', color:'#ea580c'}}>{avg(seasonAverages.ast)}</div><div style={{fontSize:'0.55rem', color:'#94a3b8'}}>APG</div></div>
+              <div style={{textAlign:'center'}}><div style={{fontSize:'1.1rem', fontWeight:'bold', color:'#ea580c'}}>{avg(seasonAverages.tov)}</div><div style={{fontSize:'0.55rem', color:'#94a3b8'}}>TOPG</div></div>
+            </div>
+          </div>
+          <div style={s.card}>
+            <h4 style={{marginTop:0, fontSize:'0.8rem', color:'#ea580c', textAlign:'center'}}>LOG GAME</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '15px', marginTop:'10px' }}>
+              <div>
+                <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.75rem', marginBottom:'6px'}}>3PT <div style={{display:'flex', gap:'2px'}}><input style={s.input} value={m3} onChange={e=>setM3(e.target.value)}/>/<input style={s.input} value={a3} onChange={e=>setA3(e.target.value)}/></div></div>
+                <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.75rem', marginBottom:'6px'}}>MID <div style={{display:'flex', gap:'2px'}}><input style={s.input} value={mMid} onChange={e=>setMMid(e.target.value)}/>/<input style={s.input} value={aMid} onChange={e=>setAMid(e.target.value)}/></div></div>
+                <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.75rem', marginBottom:'6px'}}>LAY <div style={{display:'flex', gap:'2px'}}><input style={s.input} value={mLay} onChange={e=>setMLay(e.target.value)}/>/<input style={s.input} value={aLay} onChange={e=>setALay(e.target.value)}/></div></div>
+                <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.75rem'}}>FT <div style={{display:'flex', gap:'2px'}}><input style={s.input} value={mFt} onChange={e=>setMFt(e.target.value)}/>/<input style={s.input} value={aFt} onChange={e=>setAFt(e.target.value)}/></div></div>
+              </div>
+              <div style={{borderLeft:'1px solid #334155', paddingLeft:'15px'}}>
+                <div style={{fontSize:'0.75rem', marginBottom:'6px'}}>PTS <input style={{...s.input, width:'50px'}} value={pts} onChange={e=>setPts(e.target.value)}/></div>
+                <div style={{fontSize:'0.75rem', marginBottom:'6px'}}>REB <input style={{...s.input, width:'50px'}} value={reb} onChange={e=>setReb(e.target.value)}/></div>
+                <div style={{fontSize:'0.75rem', marginBottom:'6px'}}>AST <input style={{...s.input, width:'50px'}} value={ast} onChange={e=>setAst(e.target.value)}/></div>
+                <div style={{fontSize:'0.75rem'}}>TOV <input style={{...s.input, width:'50px'}} value={tov} onChange={e=>setTov(e.target.value)}/></div>
+              </div>
+            </div>
+            <button onClick={addSession} style={{ width: '100%', padding: '14px', backgroundColor: '#ea580c', border: 'none', color: 'white', borderRadius: '15px', fontWeight: 'bold', marginTop: '15px' }}>SAVE GAME</button>
+          </div>
+          <div style={{marginTop: '20px'}}>
+            {filteredSessions.map(sess => (
+              <div key={sess.id} style={{...s.card, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <div>
+                  <div style={{fontSize:'0.85rem', fontWeight:'bold'}}>{sess.date}</div>
+                  <div style={{fontSize:'0.7rem', color:'#ea580c'}}>{sess.box.pts} PTS • {sess.fg}% FG</div>
+                </div>
+                <button onClick={() => deleteSession(sess.id)} style={{background:'#334155', border:'none', color:'#ef4444', borderRadius:'8px', padding:'5px 10px', fontSize:'0.7rem', fontWeight:'bold'}}>DELETE</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {page === 'career' && (
+        <div style={{...s.card, textAlign:'center', padding:'30px 15px'}}>
+           <div style={{fontSize:'0.7rem', color:'#94a3b8', textTransform:'uppercase'}}>Total Career Points</div>
+           <div style={{fontSize:'4rem', fontWeight:'900', color:'#ea580c'}}>{careerTotals.pts}</div>
+           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px', marginTop:20}}>
+              <div><div style={{fontSize:'0.6rem', color:'#94a3b8'}}>REB</div><div>{careerTotals.reb}</div></div>
+              <div><div style={{fontSize:'0.6rem', color:'#94a3b8'}}>AST</div><div>{careerTotals.ast}</div></div>
+              <div><div style={{fontSize:'0.6rem', color:'#94a3b8'}}>TOV</div><div>{careerTotals.tov}</div></div>
+           </div>
         </div>
       )}
 
